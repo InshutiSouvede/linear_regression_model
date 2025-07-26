@@ -1,0 +1,291 @@
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Salary Prediction',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        inputDecorationTheme: const InputDecorationTheme(
+          border: OutlineInputBorder(),
+          filled: true,
+          fillColor: Color(0xFFF3F3F3),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ButtonStyle(
+            backgroundColor: WidgetStatePropertyAll(Colors.deepPurple),
+            foregroundColor: WidgetStatePropertyAll(Colors.white),
+            padding: WidgetStatePropertyAll(EdgeInsets.symmetric(vertical: 16, horizontal: 32)),
+            shape: WidgetStatePropertyAll(
+              RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+            ),
+          ),
+        ),
+      ),
+      home: const SalaryPredictionScreen(),
+    );
+  }
+}
+
+class SalaryPredictionScreen extends StatefulWidget {
+  const SalaryPredictionScreen({super.key});
+  @override
+  State<SalaryPredictionScreen> createState() => _SalaryPredictionScreenState();
+}
+
+class _SalaryPredictionScreenState extends State<SalaryPredictionScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final Map<String, dynamic> _formData = {
+    "Age": 30,
+    "Job_Title": "Manager",
+    "Education_Level": "Bachelor",
+    "Performance_Score": 3,
+    "Work_Hours_Per_Week": 40.0,
+    "Projects_Handled": 5,
+    "Overtime_Hours": 10.0,
+    "Sick_Days": 2,
+    "Team_Size": 5,
+    "Promotions": 1,
+  };
+
+  bool _loading = false;
+  String? _result;
+  String? _error;
+
+  final List<String> jobTitles = [
+    'Specialist', 'Developer', 'Analyst', 'Manager', 'Technician', 'Engineer', 'Consultant'
+  ];
+  final List<String> educationLevels = [
+    'High School', 'Bachelor', 'Master', 'PhD'
+  ];
+
+  Future<void> _predictSalary() async {
+    setState(() {
+      _loading = true;
+      _result = null;
+      _error = null;
+    });
+    try {
+      final response = await http.post(
+        Uri.parse('http://localhost:8000/predict'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(_formData),
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          _result =
+              "Predicted Salary: ${data['salary'].toStringAsFixed(2)}\n"
+              "${data['confidence_interval'] != null ? "Confidence Interval: ${data['confidence_interval'][0].toStringAsFixed(2)} - ${data['confidence_interval'][1].toStringAsFixed(2)}" : ""}";
+        });
+      } else {
+        setState(() {
+          _error = jsonDecode(response.body)['detail'] ?? "Unknown error";
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _error = "Failed to connect to API: $e";
+      });
+    } finally {
+      setState(() {
+        _loading = false;
+      });
+    }
+  }
+
+  Widget _buildDropdown(String label, String key, List<String> items) {
+    return DropdownButtonFormField<String>(
+      value: _formData[key],
+      decoration: InputDecoration(labelText: label),
+      items: items.map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(),
+      onChanged: (v) => setState(() => _formData[key] = v),
+      validator: (v) => v == null ? 'Required' : null,
+    );
+  }
+
+  Widget _buildIntField(String label, String key, int min, int max) {
+    return TextFormField(
+      initialValue: _formData[key].toString(),
+      decoration: InputDecoration(labelText: label),
+      keyboardType: TextInputType.number,
+      onChanged: (v) => _formData[key] = int.tryParse(v) ?? min,
+      validator: (v) {
+        final val = int.tryParse(v ?? '');
+        if (val == null || val < min || val > max) {
+          return 'Enter a value between $min and $max';
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildDoubleField(String label, String key, double min, double max) {
+    return TextFormField(
+      initialValue: _formData[key].toString(),
+      decoration: InputDecoration(labelText: label),
+      keyboardType: TextInputType.number,
+      onChanged: (v) => _formData[key] = double.tryParse(v) ?? min,
+      validator: (v) {
+        final val = double.tryParse(v ?? '');
+        if (val == null || val < min || val > max) {
+          return 'Enter a value between $min and $max';
+        }
+        return null;
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isWide = MediaQuery.of(context).size.width > 600;
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Salary Prediction'),
+        backgroundColor: Colors.deepPurple,
+        elevation: 2,
+      ),
+      body: Center(
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 700),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          child: Card(
+            elevation: 6,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: SingleChildScrollView(
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Text(
+                        "Enter Employee Details",
+                        style: TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.deepPurple,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 24),
+                      Wrap(
+                        spacing: 16,
+                        runSpacing: 16,
+                        children: [
+                          SizedBox(
+                            width: isWide ? 320 : double.infinity,
+                            child: _buildIntField("Age", "Age", 18, 70),
+                          ),
+                          SizedBox(
+                            width: isWide ? 320 : double.infinity,
+                            child: _buildDropdown("Job Title", "Job_Title", jobTitles),
+                          ),
+                          SizedBox(
+                            width: isWide ? 320 : double.infinity,
+                            child: _buildDropdown("Education Level", "Education_Level", educationLevels),
+                          ),
+                          SizedBox(
+                            width: isWide ? 320 : double.infinity,
+                            child: _buildIntField("Performance Score (1-5)", "Performance_Score", 1, 5),
+                          ),
+                          SizedBox(
+                            width: isWide ? 320 : double.infinity,
+                            child: _buildDoubleField("Work Hours Per Week", "Work_Hours_Per_Week", 10, 80),
+                          ),
+                          SizedBox(
+                            width: isWide ? 320 : double.infinity,
+                            child: _buildIntField("Projects Handled", "Projects_Handled", 0, 50),
+                          ),
+                          SizedBox(
+                            width: isWide ? 320 : double.infinity,
+                            child: _buildDoubleField("Overtime Hours", "Overtime_Hours", 0, 200),
+                          ),
+                          SizedBox(
+                            width: isWide ? 320 : double.infinity,
+                            child: _buildIntField("Sick Days", "Sick_Days", 0, 50),
+                          ),
+                          SizedBox(
+                            width: isWide ? 320 : double.infinity,
+                            child: _buildIntField("Team Size", "Team_Size", 1, 50),
+                          ),
+                          SizedBox(
+                            width: isWide ? 320 : double.infinity,
+                            child: _buildIntField("Promotions", "Promotions", 0, 20),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 32),
+                      ElevatedButton.icon(
+                        icon: _loading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.calculate),
+                        label: const Text('Predict Salary', style: TextStyle(fontSize: 18)),
+                        onPressed: _loading
+                            ? null
+                            : () {
+                                if (_formKey.currentState?.validate() ?? false) {
+                                  _predictSalary();
+                                }
+                              },
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(50),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      if (_result != null)
+                        Card(
+                          color: Colors.green[50],
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          child: Padding(
+                            padding: const EdgeInsets.all(18.0),
+                            child: Text(
+                              _result!,
+                              style: const TextStyle(fontSize: 20, color: Colors.green, fontWeight: FontWeight.bold),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                      if (_error != null)
+                        Card(
+                          color: Colors.red[50],
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          child: Padding(
+                            padding: const EdgeInsets.all(18.0),
+                            child: Text(
+                              _error!,
+                              style: const TextStyle(fontSize: 18, color: Colors.red),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
