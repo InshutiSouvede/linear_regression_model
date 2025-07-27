@@ -76,7 +76,7 @@ class _SalaryPredictionScreenState extends State<SalaryPredictionScreen> {
     });
     try {
       final response = await http.post(
-        Uri.parse('http://localhost:8000/predict'),
+        Uri.parse('https://linear-regression-model-b840.onrender.com/predict'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(_formData),
       );

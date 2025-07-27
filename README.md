@@ -127,8 +127,12 @@ uvicorn main:app --reload
 ## 💡 Notes
 
 - Place your dataset in `data/employee_data.csv`.
-- For API and app integration, ensure the server is running and accessible.
-- For Android emulator, use `http://10.0.2.2:8000` instead of `localhost`.
+
+## Presentation and deployed link
+
+- GitHub Repository: https://github.com/InshutiSouvede/linear_regression_model
+- Deployed link of the API: https://linear-regression-model-b840.onrender.com/docs
+- Presentation Video : https://www.youtube.com/watch?v=760YZB8W0jU
 
 ---
 
