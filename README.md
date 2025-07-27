@@ -1,5 +1,10 @@
 # Employee Salary Prediction - ML Project
 
+## 🌱 Mission Statement
+
+My mission is to improve mental health in this era of technology. By enabling fair and data-driven salary predictions, this project aims to reduce workplace stress and promote well-being through transparency and informed decision-making.
+
+
 ## 🎯 Project Overview
 
 This project provides a complete machine learning pipeline for predicting monthly salary based on work patterns, performance metrics, and personal attributes. It includes:
@@ -31,6 +36,7 @@ employee_salary_prediction/
 │       └── main.dart              # Flutter app for salary prediction
 ├── requirements.txt               # Python dependencies
 ├── employee_salary.ipynb          # The notebook for training the models
+├── start.py                       # The starter file for this project (for deployment purposes)
 └── README.md                      # Project documentation
 ```
 
